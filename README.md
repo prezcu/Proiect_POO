@@ -1,18 +1,13 @@
-# Nume proiect
-
-Acest repository este un _template_ care poate servi ca punct de plecare pentru proiectul vostru de POO. Folosiți butonul de „Use this template” din dreapta sus pentru a vă crea propriul repo pe baza lui.
+# Aplicatie pentru muzica / podcasturi
 
 ## Descriere
 
-Notați aici o scurtă descriere a temei alese de voi.
+Acest proiect consta intr-o aplicatie (player) pentru muzica / podcasturi.
 
 ## Funcționalități
 
-Detaliația aici funcționalitățile pe care le îndeplinește aplicația voastră:
-- A
-- B
-- C
-
-## Referințe
-
-Notați aici ce alte resurse ați folosit / găsit utile pe parcursul dezvoltării proiectului.
+In aplicatie putem:
+- retine numele si detalii despre diversi artisti / autori de podcasturi;
+- retine diverse melodii si podcasturi asociate autorilor respectivi;
+- crea playlisturi cu diverse melodii sau un album al unui artist;
+- calcula durata totala a unui playlist in functie de durata tuturor melodiilor;
