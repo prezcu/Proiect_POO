@@ -11,3 +11,4 @@ In aplicatie putem:
 - retine diverse melodii si podcasturi asociate autorilor respectivi;
 - crea playlisturi cu diverse melodii sau un album al unui artist;
 - calcula durata totala a unui playlist in functie de durata tuturor melodiilor;
+- extrage durata medie a tuturor playlisturilor pe care le-am creat;
