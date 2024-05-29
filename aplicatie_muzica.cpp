@@ -1,7 +1,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <list>
 #include <stdexcept>
+#include <memory>
+#include <algorithm>
 
 class ExceptieCustom : public std::exception
 {
@@ -103,10 +106,10 @@ std::ostream& operator<<(std::ostream& out, const Autor& autor)
 class Audio_Entity
 {
 private:
-    Autor autor;
+    std::shared_ptr<Autor> autor; 
     std::string name;
 protected:
-    int duration; ///in sec
+    int duration; //in sec
 public:
     //Constructor
     Audio_Entity () {}
@@ -121,12 +124,12 @@ public:
     virtual void add_feature(std::string feature) = 0;
 
     void set_duration(int duration) { this->duration = duration; }
-    void set_autor(const Autor& autor) { this->autor = autor; }
+    void set_autor(const std::shared_ptr<Autor>& autor) { this->autor = autor; }
     void set_name(std::string name) { this->name = name; }
 
     int get_time() const { return duration; }
-    Autor get_autor() { return autor; }
-    std::string get_name() { return name; }
+    std::shared_ptr<Autor>  get_autor() { return autor; }
+    std::string get_name() const { return name; }
 
 protected:
     friend std::ostream& operator<<(std::ostream& out, const Audio_Entity& audio);
@@ -136,8 +139,14 @@ protected:
 
 std::ostream& operator<<(std::ostream& out, const Audio_Entity& audio)
 {
+
     out << "\nNume: " << audio.name;
-    out << "\nDespre autor:\n" << audio.autor;
+    out << "\nDespre autor:\n" ;
+    if (audio.autor) {
+        out << *(audio.autor);  // Dereference the shared_ptr to print Autor details
+    } else {
+        out << "Autor necunoscut\n";
+    }
     return out;
 }
 
@@ -196,64 +205,48 @@ std::ostream& operator<<(std::ostream& out, const Song& song)
         }
         out << song.features[i] << "\n";
     }
+    out << "\n";
     return out;
 }
 
-class Podcast : public Audio_Entity
-{
+class Podcast : public Audio_Entity {
 private:
     static int pod_totale;
     int episod;
-    std::vector<std::string> invitati;
+    std::list<std::string> invitati;
 public:
     // Constructor
-    Podcast () 
-    {
-        pod_totale++;
-    }
-    Podcast (std::string name, int duration) : Audio_Entity(name, duration) 
-    {
-        pod_totale++;
-    }
-    
+    Podcast() { pod_totale++; }
+    Podcast(std::string name, int duration) : Audio_Entity(name, duration) { pod_totale++; }
+
     void set_episod(int episod) { this->episod = episod; }
-    void add_feature(std::string invitat)
-    {
+    void add_feature(std::string invitat) override {
         invitati.push_back(invitat);
     }
 
     int get_episod() { return episod; }
-    std::vector<std::string>& get_invitati() { return invitati; }
-    static int get_count() 
-    {
-        return pod_totale;
-    }
+    std::list<std::string>& get_invitati() { return invitati; }
+    static int get_count() { return pod_totale; }
 
-    void show_duration()
-    {
-        
-        if (duration < 0)
-        {
+    void show_duration() override {
+        if (duration < 0) {
             throw std::invalid_argument("Duration cannot be negative.");
         }
-        
 
-        int mins = duration / 60 ;
+        int mins = duration / 60;
         int secs = duration % 60;
         int hr = mins / 60;
         mins %= 60;
-        std::cout << "Durata podcatului: " << hr << " hr " << mins << " min " << secs << " sec\n" ; 
+        std::cout << "Durata podcastului: " << hr << " hr " << mins << " min " << secs << " sec\n";
     }
 
     friend std::ostream& operator<<(std::ostream& out, const Podcast& podcast);
 
-    ~Podcast()
-    {
-        pod_totale--;
-    }
+    ~Podcast() { pod_totale--; }
 };
 
 int Podcast::pod_totale = 0;
+
 
 std::ostream& operator<<(std::ostream& out, const Podcast& podcast)
 {
@@ -263,10 +256,11 @@ std::ostream& operator<<(std::ostream& out, const Podcast& podcast)
     {
         out << "Invitati: ";
         int i = 0; 
-        for (i = 0; i < podcast.invitati.size() - 1; ++i)
-            out << podcast.invitati[i] << ", ";
-        out << podcast.invitati[i] << "\n";
+        for (const auto& invitat : podcast.invitati)
+            out << invitat << ", ";
+        
     }
+    out << "\n";
     return out;
 }
 
@@ -277,7 +271,7 @@ private:
     static int durata_totala;
     bool is_album;
     int nr_melodii;
-    Autor creator;
+    std::shared_ptr<Autor> creator;
     std::string name;
     std::vector<Song> songs;
 public:
@@ -286,7 +280,7 @@ public:
         this->name = name;
         is_album = 0;
         nr_melodii = 0;
-        creator = Autor();
+        creator = std::make_shared<Autor>();
         nr_total++;
     }
     void add_song(const Song& song) {
@@ -294,11 +288,11 @@ public:
         nr_melodii++;
         durata_totala += song.get_time();
     }
-    void set_creator(const Autor& creator) { this->creator = creator; }
+    void set_creator(const std::shared_ptr<Autor>& creator) { this->creator = creator; }
     void set_name(std::string name) { this->name = name; }
     void set_album(bool is_album) { this->is_album = is_album; }
 
-    const Autor& get_creator() { return creator; }
+    const std::shared_ptr<Autor>& get_creator() { return creator; }
     std::string get_name () const { return name; }
     bool get_is_album () { return is_album; }
 
@@ -310,8 +304,8 @@ public:
     void show_durataTotala()
     {
         int durataTotala = 0;
-        for (int i = 0; i < songs.size(); ++i)
-            durataTotala += songs[i].get_time();
+        for (const auto& song : songs)
+            durataTotala += song.get_time();
         int mins = durataTotala / 60 ;
         int secs = durataTotala % 60;
         int hr = mins / 60;
@@ -325,15 +319,43 @@ public:
     void show_songlist()
     {
         std::cout << "Songs:\n";
-        for (int i = 0; i < songs.size(); ++i)
-            std::cout << songs[i].get_name() << '\n';          
+        for (const auto& song : songs)
+            std::cout << song.get_name() << '\n';          
+    }
+
+    void sort_songs_by_duration() 
+    {
+        std::sort(songs.begin(), songs.end(), [](const Song& a, const Song& b) 
+        {
+            return a.get_time() < b.get_time();
+        });
+    }
+
+     Song* find_song_by_name(const std::string& song_name) 
+     {
+        auto it = std::find_if(songs.begin(), songs.end(), [&song_name](const Song& song) 
+        {
+            return song.get_name() == song_name;
+        });
+        if (it != songs.end()) 
+        {
+            return &(*it);
+        } 
+        else 
+        {
+            return nullptr;
+        }
     }
 
     friend std::ostream& operator<<(std::ostream& out, const Playlist& play);
 
     ~Playlist()
     {
+        int durataTotala = 0;
+        for (const auto& song : songs)
+            durataTotala += song.get_time();
         nr_total--;
+        durata_totala -= durataTotala;
     }
 
 };
@@ -344,12 +366,17 @@ int Playlist::durata_totala = 0;
 std::ostream& operator<<(std::ostream& out, const Playlist& play)
 {
     out << "Nume " << ((play.is_album) ? "album: " : "playlist: ") << play.name << '\n';
-    out << "Autor:\n" << play.creator << '\n';
+    out << "Autor:\n" << *(play.creator) << '\n';
     out << "Songs:\n";
-    for (int i = 0; i < play.songs.size(); ++i)
-        out << i+1 << ":" << play.songs[i]; 
+    int i = 1;
+    for (const auto& song : play.songs)
+    {
+        out << i << ":" << song;
+        i++;
+    }
     return out;
 }
+
 
 class Album : public Playlist
 {
@@ -418,10 +445,30 @@ std::ostream& operator<<(std::ostream& out, const PlaylistSpotify& spotify)
     return out;
 }
 
+template <typename T>
+class Collection {
+private:
+    std::vector<T> items;
+public:
+    void add_item(const T& item) {
+        items.push_back(item);
+    }
+
+    void remove_item(const T& item) {
+        items.erase(std::remove(items.begin(), items.end(), item), items.end());
+    }
+
+    void display_items() const {
+        for (const auto& item : items) {
+            std::cout << item << std::endl;
+        }
+    }
+};
+
 int main()
 {
 
-    Autor A("Andrew Huberman", 45);
+    std::shared_ptr<Autor> A = std::make_shared<Autor> ("Andrew Huberman", 45);
     Podcast Pod1("The Science & Practice of Perfecting Your Sleep", 7846);
     Pod1.set_autor(A);
     Pod1.set_episod(1);
@@ -437,14 +484,14 @@ int main()
     Pod2.set_episod(2);
     std::cout << Pod2 << std::endl;
 
-    Autor PT("Pusha-T", 46, 6);
+    std::shared_ptr<Autor> PT = std::make_shared<Autor>("Pusha-T", 46, 6);
     Album Day("Daytona");
     Day.set_album(1);
     Day.set_creator(PT);
     Day.set_lansare(2018);
     Day.set_publisher("Def Jam Music");
 
-    Song IfYou("If You Know You Know", 302, "Daytona");
+    Song IfYou("If You Know You Know", 202, "Daytona");
     IfYou.set_autor(PT);
     IfYou.set_casadisc("Def Jam");
     Day.add_song(IfYou);
@@ -481,7 +528,7 @@ int main()
     Infrared.set_casadisc("Def Jam");
     Day.add_song(Infrared);
 
-    std::cout << Day;
+    /*std::cout << Day;
     Day.show_durataTotala();
 
     //runtime polymorphism
@@ -497,7 +544,7 @@ int main()
     base2->set_duration(10456);
 
     //
-    Autor Ion("Ion Paladi", 50, 3);
+    std::shared_ptr<Autor> Ion = std::make_shared<Autor>("Ion Paladi", 50, 3);
 
     Song Test("Bine sade-i mesei mele", -13, "Muzica populara");
     Test.set_autor(Ion);
@@ -522,6 +569,42 @@ int main()
 
     //variabile si functie statica 2
     std::cout << "Durata medie a tuturor playlisturilor este de " << Playlist::get_durata_medie() << " minute\n";
+    */
+
+    //unique_ptr + avem shared_ptr la audio_entity
+
+    std::unique_ptr<Audio_Entity> song1 = std::make_unique<Song>("Song1", 200, "Album1");
+    std::unique_ptr<Audio_Entity> podcast1 = std::make_unique<Podcast>("Podcast1", 3600);
+
+    song1->show_duration();
+    podcast1->show_duration();
+
+    //template
+
+    Collection<Song> song_collection;
+    song_collection.add_item(IfYou);
+    song_collection.add_item(The);
+
+    song_collection.display_items();
+
+    Collection<Podcast> podcast_collection;
+    podcast_collection.add_item(Pod1);
+    podcast_collection.add_item(Pod2);
+
+    podcast_collection.display_items();
+
+    //functii stl: sort + findif
+
+    Day.sort_songs_by_duration();
+    std::cout << "Playlist dupa sortare\n";
+    std::cout << Day;
+
+    Song* found_song = Day.find_song_by_name("Hard Piano");
+    if (found_song) {
+        std::cout << "\nMelodia cautata a fost gasita:\n" << *found_song;
+    } else {
+        std::cout << "\nMelodia cautata nu a fost gasita.\n";
+    }
 
     return 0;
 }
